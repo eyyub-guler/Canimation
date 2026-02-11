@@ -151,19 +151,46 @@ for(int i = 0; i < MAX_COLUMNS ; i++){
 
 
     while (1) {
-        int rows, cols;
-        getmaxyx(stdscr, rows, cols);
+            int rows, cols;
+            getmaxyx(stdscr, rows, cols);
+            // important !! when creating new stream values be carefull about its head not beign on the screen because we dont want it to appear randomly on the screen
+            for (int i = 0; i < cols; i += 2) {
+                    if(column[i].stream1lenght == 0 || column[i].stream2lenght == 0){
+                    //find the 0 one and pick rand value for its head and its length then make its highlight 1
+                            if(column[i].stream1lenght == 0){
+                                    column[i].stream1highlight = 1;
+                                    column[i].stream1lenght = 5 + (rand() % 35);
+                                    if(column[i].stream2head < 0){
+                                            column[i].stream1head = column[i].stream2head - ((rand() % 10) + 20);            
+                                    } else{
+                                            column[i].stream1head = -30 + (rand() % 30);
+                                    }
+                            } else {
+                                    column[i].stream2highlight = 1;
+                                    column[i].stream2lenght = 5 + (rand() % 35);
+                                    if(column[i].stream1head < 0){
+                                            column[i].stream2head = column[i].stream1head - ((rand() % 10) + 20);            
+                                    } else{
+                                            column[i].stream2head = -30 + (rand() % 30);
+                                    }
+                    }
+                    }
+                    if(column[i].stream1head > column[i].stream2head){
+                            if(column[i].stream1head < 0){
+                                // do nothing and plus the heads
+                            } else if(column[i].stream2head < 0){
+                                // print the stream1 and plus 1 both of these functions look if stream 1 is fully printed if not vreate new number
+                            } else {
+                                // print both streams calculate if the stream 2 is fully printed if not then create new number
+                                // check if stream 1 is on the end of rows if is then do not plus 1 the heads but -1 its length and make its highligt 0
+                                // if it reaches 0 the function will create new one with stream2's values 
 
-        for (int i = 0; i < cols; i += 2) {
-            if(column[i].stream1lenght == 0 || column[i].stream2lenght == 0){
-                //find the 0 one and pick rand value for its head and its length then make its highlight 1
-            }
-            if(column[i].stream1head > column[i].stream2head){
+                            }
 
-            } else {
+                    } else {
 
-                
-            }
+
+            }   
         }
         refresh();
         napms(100);
