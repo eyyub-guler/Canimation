@@ -36,9 +36,12 @@
 
 
 struct Column {
-    int istherenewline;     //calculated after last repeat
-    int ongoing_streams; /*how many stream elements left on the ongoing stream*/
-    int stream_wait;
+    int stream1lenght;     //calculated after last repeat
+    int stream1head; /*how many stream elements left on the ongoing stream*/
+    int stream2length;
+    int stream2head;
+    int stream1highlight;
+    int stream2highlight;
 };
 
 struct Column columns[MAX_COLUMNS];
@@ -53,6 +56,9 @@ int main(const int argc, char *argv[]) {
     int color = WHITE;
     int currency = DOLLAR;
     int option;
+
+    srand(time(NULL));
+
     if (argc == 1) {
         matrix(color);
     }
@@ -124,7 +130,6 @@ void swap_int(int *a, int *b) {
 void matrix(int color) {
     struct Column column[MAX_COLUMNS];
     initscr();
-    memset(column, 0, sizeof(column));
     start_color();
     use_default_colors(); // arka plan için şart
     init_pair(GREEN, COLOR_GREEN, -1);
@@ -135,7 +140,14 @@ void matrix(int color) {
     init_pair(MAGENTA, COLOR_MAGENTA, -1);
     init_pair(BLACK, COLOR_BLACK, -1);
 
-
+for(int i = 0; i < MAX_COLUMNS ; i++){
+        column[i].stream1head =(-50) + (rand() % 50);
+        column[i].stream1lenght = 5 + (rand() % 35);
+        column[i].stream1highlight = 1;
+        column[i].stream2head = column[i].stream1head -column[i].stream1lenght - (10 + (rand() % 40));
+        column[i].stream2lenght = 5 + (rand() % 35);
+        column[i].stream2highlight = 1;
+}
 
 
     while (1) {
@@ -143,9 +155,28 @@ void matrix(int color) {
         getmaxyx(stdscr, rows, cols);
 
         for (int i = 0; i < cols; i += 2) {
-            float printed_characternumber = 0;
-            int a = ' ';
-            for (int j = 0; j < rows; j++) {
+            if(column[i].stream1lenght == 0 || column[i].stream2lenght == 0){
+                //find the 0 one and pick rand value for its head and its length then make its highlight 1
+            }
+            if(column[i].stream1head > column[i].stream2head){
+
+            } else {
+
+                
+            }
+        }
+        refresh();
+        napms(100);
+    }
+}
+void coin(int currency) {}
+void snake(void) {}   
+
+
+
+
+/* here's the old function i wrote it doesnt work properly
+for (int j = 0; j < rows; j++) {
                 if (column[i].istherenewline) {
                     column[i].ongoing_streams =10 + rand() % (MAX_STREAM_LENGTH - 10);
                     column[i].istherenewline = 0;
@@ -229,10 +260,4 @@ void matrix(int color) {
 
             }
 
-        }
-        refresh();
-        napms(100);
-    }
-}
-void coin(int currency) {}
-void snake(void) {} 
+*/
