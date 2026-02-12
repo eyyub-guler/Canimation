@@ -45,8 +45,7 @@ struct Column {
 };
 
 struct Column columns[MAX_COLUMNS];
-
-
+void scrmv(int nextPrint, int row, int col);
 void swap_int(int *a, int *b);
 void matrix(int color);
 void coin(int currency);
@@ -126,10 +125,35 @@ void swap_int(int *a, int *b) {
     *a = *b;
     *b = temp;
 }
+void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col){
+    int rows,cols;
+    getmaxyx(stdscr, rows, cols);
+    if(col >= cols || lastrow >= rows || firstrow < 0){
+        return;
+    }
+    chtype v = mvinch(firstrow, col);
+    char c = v & A_CHARTEXT;
+    short pair = PAIR_NUMBER(v);
+    int a = c;
+    short currpair = pair;
+    mvaddch(firstrow, col, nextPrint| COLOR_PAIR(nexprintscolor));
 
+    for(int i = firstrow + 1; i <= lastrow; i++){
+        
+        v = mvinch(i, col);
+        c = v & A_CHARTEXT;
+        pair = PAIR_NUMBER(v);
+        if(a == ' ' && c == ' '){
+                currpair = pair;
+                continue;
+        }
+        mvaddch(i, col, a| COLOR_PAIR(currpair));
+        a = c;
+        currpair = pair;
+    }
+}
 void matrix(int color) {
     //for future changes i can erase the if j < 0 function because in the long run it could be expensive
-    // mvaddch(j, i, a | COLOR_PAIR(color));could be done
     struct Column column[MAX_COLUMNS];
     initscr();
     start_color();
@@ -152,6 +176,10 @@ for(int i = 0; i < MAX_COLUMNS ; i++){
 
 
     while (1) {
+        // mesele 0 a geldiğinde yazmaması olabilir 
+        // can write a new function that can move the screen one tile take the new line it makes code a lot easier to read
+        // if (c == '\0') c = ' '; null char döndürebiliyomuş mvinch
+
             int rows, cols, i, j, a, b;
             getmaxyx(stdscr, rows, cols);
             for (i = 0; i < cols; i += 2) {
