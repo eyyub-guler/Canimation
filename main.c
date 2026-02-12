@@ -36,7 +36,7 @@
 
 
 struct Column {
-    int stream1lenght;     //calculated after last repeat
+    int stream1length;     //calculated after last repeat
     int stream1head; /*how many stream elements left on the ongoing stream*/
     int stream2length;
     int stream2head;
@@ -53,7 +53,7 @@ void coin(int currency);
 void snake();
 int main(const int argc, char *argv[]) {
     int animation = MATRIX;
-    int color = WHITE;
+    int color = GREEN;
     int currency = DOLLAR;
     int option;
 
@@ -128,6 +128,8 @@ void swap_int(int *a, int *b) {
 }
 
 void matrix(int color) {
+    //for future changes i can erase the if j < 0 function because in the long run it could be expensive
+    // mvaddch(j, i, a | COLOR_PAIR(color));could be done
     struct Column column[MAX_COLUMNS];
     initscr();
     start_color();
@@ -139,27 +141,35 @@ void matrix(int color) {
     init_pair(YELLOW, COLOR_YELLOW, -1);
     init_pair(MAGENTA, COLOR_MAGENTA, -1);
     init_pair(BLACK, COLOR_BLACK, -1);
-
 for(int i = 0; i < MAX_COLUMNS ; i++){
         column[i].stream1head =(-50) + (rand() % 50);
-        column[i].stream1lenght = 5 + (rand() % 35);
+        column[i].stream1length = 5 + (rand() % 35);
         column[i].stream1highlight = 1;
-        column[i].stream2head = column[i].stream1head -column[i].stream1lenght - (10 + (rand() % 40));
-        column[i].stream2lenght = 5 + (rand() % 35);
+        column[i].stream2head = column[i].stream1head -column[i].stream1length - (10 + (rand() % 40));
+        column[i].stream2length = 5 + (rand() % 35);
         column[i].stream2highlight = 1;
 }
 
 
     while (1) {
-            int rows, cols;
+            int rows, cols, i, j, a, b;
             getmaxyx(stdscr, rows, cols);
+            for (i = 0; i < cols; i += 2) {
+                column[i].stream1head = -30 + (rand() % 30);
+                column[i].stream1length = 5 + (rand() % 35);
+                column[i].stream1highlight = 1;
+                column[i].stream2head = column[i].stream1head - ((rand() % 10) + 20);  
+                column[i].stream2length = 5 + (rand() % 35);
+                column[i].stream2highlight = 1;          
+            }
             // important !! when creating new stream values be carefull about its head not beign on the screen because we dont want it to appear randomly on the screen
-            for (int i = 0; i < cols; i += 2) {
-                    if(column[i].stream1lenght == 0 || column[i].stream2lenght == 0){
+            for (i = 0; i < cols; i += 2) {
+
+                    if(column[i].stream1length == 0 || column[i].stream2length == 0){
                     //find the 0 one and pick rand value for its head and its length then make its highlight 1
-                            if(column[i].stream1lenght == 0){
+                            if(column[i].stream1length == 0){
                                     column[i].stream1highlight = 1;
-                                    column[i].stream1lenght = 5 + (rand() % 35);
+                                    column[i].stream1length = 5 + (rand() % 35);
                                     if(column[i].stream2head < 0){
                                             column[i].stream1head = column[i].stream2head - ((rand() % 10) + 20);            
                                     } else{
@@ -167,31 +177,160 @@ for(int i = 0; i < MAX_COLUMNS ; i++){
                                     }
                             } else {
                                     column[i].stream2highlight = 1;
-                                    column[i].stream2lenght = 5 + (rand() % 35);
+                                    column[i].stream2length = 5 + (rand() % 35);
                                     if(column[i].stream1head < 0){
                                             column[i].stream2head = column[i].stream1head - ((rand() % 10) + 20);            
                                     } else{
                                             column[i].stream2head = -30 + (rand() % 30);
                                     }
+                                }
                     }
-                    }
+
+                    
                     if(column[i].stream1head > column[i].stream2head){
                             if(column[i].stream1head < 0){
-                                // do nothing and plus the heads
+                                column[i].stream1head++;
+                                column[i].stream2head++;
                             } else if(column[i].stream2head < 0){
-                                // print the stream1 and plus 1 both of these functions look if stream 1 is fully printed if not vreate new number
-                            } else {
+                                // print the stream1 and plus 1 both of these functions headslook if stream 1 is fully printed from the start of the screen if not create new number
+                                a = ' ';
+                                for(j = column[i].stream1head - column[i].stream1length +1 ; j < column[i].stream1head; j++){
+                                        if(j < 0){
+                                            j = 0;
+                                            a = (33 + rand() % 94);
+                                        }
+                                        b = mvinch(j,i);
+                                        mvaddch(j, i, a | COLOR_PAIR(color));
+                                        a = b;
+                                        
+                                    //open white color than close it and print the last line
+                                }
+                                if(column[i].stream1highlight){
+                                        mvaddch(j, i, a | COLOR_PAIR(WHITE));
+                                } else  {
+                                    mvaddch(j, i, a | COLOR_PAIR(color));
+                                }
+                                column[i].stream1head++;
+                                }
+                                
+                             else {
                                 // print both streams calculate if the stream 2 is fully printed if not then create new number
                                 // check if stream 1 is on the end of rows if is then do not plus 1 the heads but -1 its length and make its highligt 0
                                 // if it reaches 0 the function will create new one with stream2's values 
+                                a = ' ';
+                                for(j = column[i].stream1head - column[i].stream1length +1 ; j < column[i].stream1head; j++){
+                                        b = mvinch(j,i);
+                                        mvaddch(j, i, a | COLOR_PAIR(color));
+                                        a = b;
+                                        
+                                    //open white color than close it and print the last line
+                                }
+                                if(column[i].stream1highlight){
+                                        mvaddch(j, i, a | COLOR_PAIR(WHITE));
+                                } else  {
+                                    mvaddch(j, i, a | COLOR_PAIR(color));
+                                }
+                                column[i].stream1head++;
+
+                                a = ' ';
+                                for(j = column[i].stream2head - column[i].stream2length +1 ; j < column[i].stream2head; j++){
+                                        if(j < 0){
+                                            j = 0;
+                                            a = (33 + rand() % 94);
+                                        }
+                                        b = mvinch(j,i);
+                                        mvaddch(j, i, a | COLOR_PAIR(color));
+                                        a = b;
+                                        
+                                    //open white color than close it and print the last line
+                                }
+                                if(column[i].stream2highlight){
+                                        mvaddch(j, i, a | COLOR_PAIR(WHITE));
+                                } else  {
+                                    mvaddch(j, i, a | COLOR_PAIR(color));
+                                }
+                                column[i].stream2head++;
+                                }
 
                             }
+                        
 
-                    } else {
+                     else {
+                            if (column[i].stream2head < 0) {
+                            column[i].stream2head++;
+                            column[i].stream1head++;
+                            } else if (column[i].stream1head < 0) {
+                            a = ' ';
+                                    for (j = column[i].stream2head - column[i].stream2length + 1; j < column[i].stream2head; j++) {
+                                            if (j < 0) {
+                                            j = 0;
+                                            a = (33 + rand() % 94);
+                                            }
+                                            b = mvinch(j, i);
+                                            mvaddch(j, i, a | COLOR_PAIR(color));
+                                            a = b;
+                                            }
+                            if (column[i].stream2highlight) {
+                            mvaddch(j, i, a | COLOR_PAIR(WHITE));
+                            } else {
+                            mvaddch(j, i, a | COLOR_PAIR(color));
+                            }
+                            column[i].stream2head++;
+                            } else {
+                             /* --- draw stream2 --- */
+                            a = ' ';
+                            for (j = column[i].stream2head - column[i].stream2length + 1; j < column[i].stream2head; j++) {
+                            b = mvinch(j, i);
+                            mvaddch(j, i, a | COLOR_PAIR(color));
+                            a = b;
+                            }
+                            if (column[i].stream2highlight) {
+                            mvaddch(j, i, a | COLOR_PAIR(WHITE));
+                            } else {
+                            mvaddch(j, i, a | COLOR_PAIR(color));
+                            }
+                        column[i].stream2head++;
+
+                        /* --- draw stream1 --- */
+                        a = ' ';
+                        for (j = column[i].stream1head - column[i].stream1length + 1; j < column[i].stream1head; j++) {
+                        if (j < 0) {
+                        j = 0;
+                        a = (33 + rand() % 94);
+                        }
+
+                        b = mvinch(j, i);
+                        mvaddch(j, i, a | COLOR_PAIR(color));
+                        a = b;
+                        }
+
+                        if (column[i].stream1highlight) {
+                          mvaddch(j, i, a | COLOR_PAIR(WHITE));
+                        } else {
+                            mvaddch(j, i, a | COLOR_PAIR(color));
+                          }
+
+                          column[i].stream1head++;
+                        }
+                        }
 
 
-            }   
-        }
+                           
+                                if (column[i].stream1head == rows || column[i].stream2head == rows ){
+                            if(column[i].stream1head == rows){
+                                    column[i].stream1head--;
+                                    column[i].stream1length--;
+                                    column[i].stream1highlight = 0;
+                            } else {
+                                    column[i].stream2head--;
+                                    column[i].stream2length--;
+                                    column[i].stream2highlight = 0;
+                            }
+                        }
+                    }
+            
+    
+
         refresh();
         napms(100);
     }
