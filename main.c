@@ -36,16 +36,12 @@
 
 
 struct Column {
-    int stream1length;     //calculated after last repeat
-    int stream1head; /*how many stream elements left on the ongoing stream*/
-    int stream2length;
-    int stream2head;
-    int stream1highlight;
-    int stream2highlight;
+    int stream;
 };
 
 struct Column columns[MAX_COLUMNS];
-void scrmv(int nextPrint, int row, int col);
+void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col);
+int rand_range(int a, int b);
 void swap_int(int *a, int *b);
 void matrix(int color);
 void coin(int currency);
@@ -120,6 +116,20 @@ int main(const int argc, char *argv[]) {
     }
     return 0;
 }
+int rand_range(int a, int b){
+     int min, max;
+
+    if (a < b) {
+        min = a;
+        max = b;
+    } else {
+        min = b;
+        max = a;
+    }
+
+    return min + rand() % (max - min + 1);
+}
+
 void swap_int(int *a, int *b) {
     int temp = *a;
     *a = *b;
@@ -154,7 +164,10 @@ void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col)
 }
 void matrix(int color) {
     //for future changes i can erase the if j < 0 function because in the long run it could be expensive
+    int a;
     struct Column column[MAX_COLUMNS];
+    curs_set(0);
+
     initscr();
     start_color();
     use_default_colors(); // arka plan için şart
@@ -166,12 +179,7 @@ void matrix(int color) {
     init_pair(MAGENTA, COLOR_MAGENTA, -1);
     init_pair(BLACK, COLOR_BLACK, -1);
 for(int i = 0; i < MAX_COLUMNS ; i++){
-        column[i].stream1head =(-50) + (rand() % 50);
-        column[i].stream1length = 5 + (rand() % 35);
-        column[i].stream1highlight = 1;
-        column[i].stream2head = column[i].stream1head -column[i].stream1length - (10 + (rand() % 40));
-        column[i].stream2length = 5 + (rand() % 35);
-        column[i].stream2highlight = 1;
+        column[i].stream = 0;
 }
 
 
@@ -182,16 +190,129 @@ for(int i = 0; i < MAX_COLUMNS ; i++){
 
             int rows, cols, i, j, a, b;
             getmaxyx(stdscr, rows, cols);
-            for (i = 0; i < cols; i += 2) {
-                column[i].stream1head = -30 + (rand() % 30);
-                column[i].stream1length = 5 + (rand() % 35);
-                column[i].stream1highlight = 1;
-                column[i].stream2head = column[i].stream1head - ((rand() % 10) + 20);  
-                column[i].stream2length = 5 + (rand() % 35);
-                column[i].stream2highlight = 1;          
-            }
             // important !! when creating new stream values be carefull about its head not beign on the screen because we dont want it to appear randomly on the screen
-            for (i = 0; i < cols; i += 2) {
+            for (i = 0; i < cols; i += 2){
+             if(!column[i].stream){
+                if(rand_range(0,rows - 1) == 0){
+                    column[i].stream = 1;
+                    a = rand_range(33, 126);
+                    scrmv(a,WHITE,0, rows - 1, i);
+                } else{
+                    scrmv(' ',color,0, rows - 1, i);
+                }
+             } else{
+                if (rand_range(0,rows/2 -1) == 0){
+                    column[i].stream = 0;
+                    scrmv(' ',color,0, rows - 1, i);
+                } else {
+                    a = rand_range(33, 126);
+                    scrmv(a,color,0, rows - 1, i);
+                }
+             }
+            }
+            
+    
+
+        wnoutrefresh(stdscr); 
+        doupdate();
+        napms(40);
+    }
+}
+void coin(int currency) {}
+void snake(void) {}   
+
+
+
+
+/* here's the old function i wrote it doesnt work properly
+for (int j = 0; j < rows; j++) {
+                if (column[i].istherenewline) {
+                    column[i].ongoing_streams =10 + rand() % (MAX_STREAM_LENGTH - 10);
+                    column[i].istherenewline = 0;
+                    a = 33 + rand() % (126 - 33 + 1);
+                    attron(COLOR_PAIR(WHITE));   // 1 numaralı renk çifti aktif
+                    mvaddch(j, i, a);      // karakteri yaz
+                    attroff(COLOR_PAIR(WHITE));// rengi kapat
+                    column[i].ongoing_streams--;
+                    continue;
+                }
+                if (column[i].ongoing_streams != 0 && j == 0) {
+                    a = 33 + rand() % (126 - 33 + 1);
+                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
+                    mvaddch(j, i, a);      // karakteri yaz
+                    attroff(COLOR_PAIR(color));  // rengi kapat
+                    column[i].ongoing_streams--;
+                    printed_characternumber++;
+                    continue;
+                } else if (j == 0) {
+                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
+                    mvaddch(j, i, ' ');      // karakteri yaz
+                    attroff(COLOR_PAIR(color));  // rengi kapat
+                    printed_characternumber++;
+                    continue;
+                }
+                chtype curr = mvinch(j, i) & A_CHARTEXT;
+                chtype prev = mvinch(j-1, i) & A_CHARTEXT;
+
+                if (prev == ' ' && curr == ' ') {
+                }else if (prev == ' ' ){
+                    a = mvinch(j, i) & A_CHARTEXT;
+
+                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
+                    mvaddch(j, i, ' ');      // karakteri yaz
+                    attroff(COLOR_PAIR(color));  // rengi kapat
+                    printed_characternumber++;
+                    j++;
+                    int b = mvinch(j, i) & A_CHARTEXT;
+                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
+                    mvaddch(j, i, a);      // karakteri yaz
+                    attroff(COLOR_PAIR(color));
+                    a = b;
+                }else if (curr == ' ' ) {
+                    if (a == ' ') {
+                        attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
+                        mvaddch(j, i, ' ');      // karakteri yaz
+                        attroff(COLOR_PAIR(color));
+                        j;
+                    } else {
+                        attron(COLOR_PAIR(WHITE));   // 1 numaralı renk çifti aktif
+                        mvaddch(j, i, a);      // karakteri yaz
+                        attroff(COLOR_PAIR(WHITE));  // rengi kapat
+
+                        printed_characternumber++;
+                        a = ' ';
+                    }
+                }else {
+                    int b = mvinch(j,i) & A_CHARTEXT;
+
+                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
+                    mvaddch(j, i, a);      // karakteri yaz
+                    attroff(COLOR_PAIR(color));  // rengi kapat
+
+                    printed_characternumber++;
+                    a = b;
+                }
+
+
+                if (column[i].ongoing_streams == 0) {
+                    if (column[i].stream_wait == 0) {
+                        column[i].istherenewline = 1;
+                        
+                    } else {
+                        column[i].stream_wait--;
+                    }
+
+                    } else {
+                        column[i].stream_wait = rand() % 20;
+
+                    }
+
+            }
+
+*/
+
+/* heres the second function i wrote that doesnt work
+
 
                     if(column[i].stream1length == 0 || column[i].stream2length == 0){
                     //find the 0 one and pick rand value for its head and its length then make its highlight 1
@@ -305,7 +426,7 @@ for(int i = 0; i < MAX_COLUMNS ; i++){
                             }
                             column[i].stream2head++;
                             } else {
-                             /* --- draw stream2 --- */
+                            
                             a = ' ';
                             for (j = column[i].stream2head - column[i].stream2length + 1; j < column[i].stream2head; j++) {
                             b = mvinch(j, i);
@@ -319,7 +440,7 @@ for(int i = 0; i < MAX_COLUMNS ; i++){
                             }
                         column[i].stream2head++;
 
-                        /* --- draw stream1 --- */
+                     
                         a = ' ';
                         for (j = column[i].stream1head - column[i].stream1length + 1; j < column[i].stream1head; j++) {
                         if (j < 0) {
@@ -355,103 +476,4 @@ for(int i = 0; i < MAX_COLUMNS ; i++){
                                     column[i].stream2highlight = 0;
                             }
                         }
-                    }
-            
-    
-
-        refresh();
-        napms(100);
-    }
-}
-void coin(int currency) {}
-void snake(void) {}   
-
-
-
-
-/* here's the old function i wrote it doesnt work properly
-for (int j = 0; j < rows; j++) {
-                if (column[i].istherenewline) {
-                    column[i].ongoing_streams =10 + rand() % (MAX_STREAM_LENGTH - 10);
-                    column[i].istherenewline = 0;
-                    a = 33 + rand() % (126 - 33 + 1);
-                    attron(COLOR_PAIR(WHITE));   // 1 numaralı renk çifti aktif
-                    mvaddch(j, i, a);      // karakteri yaz
-                    attroff(COLOR_PAIR(WHITE));// rengi kapat
-                    column[i].ongoing_streams--;
-                    continue;
-                }
-                if (column[i].ongoing_streams != 0 && j == 0) {
-                    a = 33 + rand() % (126 - 33 + 1);
-                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
-                    mvaddch(j, i, a);      // karakteri yaz
-                    attroff(COLOR_PAIR(color));  // rengi kapat
-                    column[i].ongoing_streams--;
-                    printed_characternumber++;
-                    continue;
-                } else if (j == 0) {
-                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
-                    mvaddch(j, i, ' ');      // karakteri yaz
-                    attroff(COLOR_PAIR(color));  // rengi kapat
-                    printed_characternumber++;
-                    continue;
-                }
-                chtype curr = mvinch(j, i) & A_CHARTEXT;
-                chtype prev = mvinch(j-1, i) & A_CHARTEXT;
-
-                if (prev == ' ' && curr == ' ') {
-                }else if (prev == ' ' ){
-                    a = mvinch(j, i) & A_CHARTEXT;
-
-                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
-                    mvaddch(j, i, ' ');      // karakteri yaz
-                    attroff(COLOR_PAIR(color));  // rengi kapat
-                    printed_characternumber++;
-                    j++;
-                    int b = mvinch(j, i) & A_CHARTEXT;
-                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
-                    mvaddch(j, i, a);      // karakteri yaz
-                    attroff(COLOR_PAIR(color));
-                    a = b;
-                }else if (curr == ' ' ) {
-                    if (a == ' ') {
-                        attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
-                        mvaddch(j, i, ' ');      // karakteri yaz
-                        attroff(COLOR_PAIR(color));
-                        j;
-                    } else {
-                        attron(COLOR_PAIR(WHITE));   // 1 numaralı renk çifti aktif
-                        mvaddch(j, i, a);      // karakteri yaz
-                        attroff(COLOR_PAIR(WHITE));  // rengi kapat
-
-                        printed_characternumber++;
-                        a = ' ';
-                    }
-                }else {
-                    int b = mvinch(j,i) & A_CHARTEXT;
-
-                    attron(COLOR_PAIR(color));   // 1 numaralı renk çifti aktif
-                    mvaddch(j, i, a);      // karakteri yaz
-                    attroff(COLOR_PAIR(color));  // rengi kapat
-
-                    printed_characternumber++;
-                    a = b;
-                }
-
-
-                if (column[i].ongoing_streams == 0) {
-                    if (column[i].stream_wait == 0) {
-                        column[i].istherenewline = 1;
-                        
-                    } else {
-                        column[i].stream_wait--;
-                    }
-
-                    } else {
-                        column[i].stream_wait = rand() % 20;
-
-                    }
-
-            }
-
-*/
+                        */
