@@ -41,8 +41,8 @@ struct Column {
     int tick;
     int speed;
 };
-
 struct Column columns[MAX_COLUMNS];
+volatile sig_atomic_t signal_status = 0;
 void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col);
 int rand_range(int a, int b);
 void swap_int(int *a, int *b);
@@ -191,7 +191,7 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
         column[i].space = rand_range(3,MAX_ROW/2 - 1) + rand_range(3,MAX_ROW/2 - 1) + 1;
         column[i].life = 0;
         column[i].tick = 0;
-        column[i].speed = rand_range(1,5);
+        column[i].speed = rand_range(2,5);
 }
 
 
@@ -214,12 +214,6 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
                 } else {
                 column[i].tick = 0;
                 }
-                // first look if life is empty or full 
-                //make an algorithm that when the life is != 0 space = 0
-                // when life becomes 0 create space 
-                // when space too becomes 0 create the new life value
-                // main focus is that when one is 0 the other one gets a value
-                // try not to make them both zero and try to make only one value 0
                 if(column[i].life > 0){
                     column[i].life--;
                     if(column[i].life == 0){
@@ -251,12 +245,12 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
             
     
 
-        wnoutrefresh(stdscr); 
-        doupdate();
+        refresh(); 
         napms(40);
-        curs_set(1);
-        endwin();
+        
     }
+    curs_set(1);
+        endwin();
 }
 void coin(int currency) {}
 void snake(void) {}   
