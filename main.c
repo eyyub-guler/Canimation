@@ -12,8 +12,8 @@
 #include <getopt.h>
 #include <curses.h>
 
-#define MAX_COLUMN 80
-#define MAX_COLUMNS 80
+#define MAX_COLUMNS 400
+#define MAX_ROW 80
 #define MAX_STREAMS 5
 #define MAX_STREAM_LENGTH 20
 
@@ -36,7 +36,8 @@
 
 
 struct Column {
-    int stream;
+    int life;
+    int space;
 };
 
 struct Column columns[MAX_COLUMNS];
@@ -163,7 +164,6 @@ void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col)
     }
 }
 void matrix(int color) {
-    //for future changes i can erase the if j < 0 function because in the long run it could be expensive
     int a;
     struct Column column[MAX_COLUMNS];
     curs_set(0);
@@ -178,37 +178,51 @@ void matrix(int color) {
     init_pair(YELLOW, COLOR_YELLOW, -1);
     init_pair(MAGENTA, COLOR_MAGENTA, -1);
     init_pair(BLACK, COLOR_BLACK, -1);
-for(int i = 0; i < MAX_COLUMNS ; i++){
-        column[i].stream = 0;
+for(int i = 0; i < MAX_COLUMNS ; i += 2){
+        column[i].space = rand_range(3,MAX_ROW/2 - 1) + rand_range(3,MAX_ROW/2 - 1) + 1;
+        column[i].life = 0;
 }
 
 
     while (1) {
-        // mesele 0 a geldiğinde yazmaması olabilir 
-        // can write a new function that can move the screen one tile take the new line it makes code a lot easier to read
         // if (c == '\0') c = ' '; null char döndürebiliyomuş mvinch
 
             int rows, cols, i, j, a, b;
             getmaxyx(stdscr, rows, cols);
-            // important !! when creating new stream values be carefull about its head not beign on the screen because we dont want it to appear randomly on the screen
             for (i = 0; i < cols; i += 2){
-             if(!column[i].stream){
-                if(rand_range(0,rows - 1) == 0){
-                    column[i].stream = 1;
-                    a = rand_range(33, 126);
-                    scrmv(a,WHITE,0, rows - 1, i);
-                } else{
-                    scrmv(' ',color,0, rows - 1, i);
-                }
-             } else{
-                if (rand_range(0,rows/2 -1) == 0){
-                    column[i].stream = 0;
-                    scrmv(' ',color,0, rows - 1, i);
+                // first look if life is empty or full 
+                //make an algorithm that when the life is != 0 space = 0
+                // when life becomes 0 create space 
+                // when space too becomes 0 create the new life value
+                // main focus is that when one is 0 the other one gets a value
+                // try not to make them both zero and try to make only one value 0
+                if(column[i].life > 0){
+                    column[i].life--;
+                    if(column[i].life == 0){
+                        column[i].space = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
+                        scrmv(' ',color,0, rows - 1, i);
+
+                    } else {
+                        a = rand_range(33, 126);
+                        scrmv(a,color,0, rows - 1, i);
+                    }
+                } else if(column[i].space > 0){
+                    column[i].space--;
+                    if(column[i].space == 0){
+                        column[i].life = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
+                        a = rand_range(33, 126);
+                        scrmv(a,WHITE,0, rows - 1, i);
+                    } else {
+                        scrmv(' ',color,0, rows - 1, i);
+                    }
                 } else {
-                    a = rand_range(33, 126);
-                    scrmv(a,color,0, rows - 1, i);
+                    column[i].space = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
+                    column[i].life = 0;
+                    scrmv(' ',color,0, rows - 1, i);
+                    column[i].space--;
                 }
-             }
+             
+             
             }
             
     
