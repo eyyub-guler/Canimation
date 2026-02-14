@@ -38,6 +38,8 @@
 struct Column {
     int life;
     int space;
+    int tick;
+    int speed;
 };
 
 struct Column columns[MAX_COLUMNS];
@@ -48,6 +50,7 @@ void matrix(int color);
 void coin(int currency);
 void snake();
 int main(const int argc, char *argv[]) {
+
     int animation = MATRIX;
     int color = GREEN;
     int currency = DOLLAR;
@@ -117,6 +120,9 @@ int main(const int argc, char *argv[]) {
     }
     return 0;
 }
+void sighandler(int s) {
+    signal_status = s;
+}
 int rand_range(int a, int b){
      int min, max;
 
@@ -166,10 +172,13 @@ void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col)
 void matrix(int color) {
     int a;
     struct Column column[MAX_COLUMNS];
-    curs_set(0);
-
     initscr();
     start_color();
+    curs_set(0);
+    nodelay(stdscr, TRUE);
+    signal(SIGINT, sighandler);
+    signal(SIGQUIT, sighandler);
+    
     use_default_colors(); // arka plan için şart
     init_pair(GREEN, COLOR_GREEN, -1);
     init_pair(WHITE, COLOR_WHITE, -1);
@@ -181,15 +190,30 @@ void matrix(int color) {
 for(int i = 0; i < MAX_COLUMNS ; i += 2){
         column[i].space = rand_range(3,MAX_ROW/2 - 1) + rand_range(3,MAX_ROW/2 - 1) + 1;
         column[i].life = 0;
+        column[i].tick = 0;
+        column[i].speed = rand_range(1,5);
 }
 
 
     while (1) {
-        // if (c == '\0') c = ' '; null char döndürebiliyomuş mvinch
 
+            if (signal_status == SIGINT || signal_status == SIGQUIT) {
+            break;
+                }
+
+            int ch = getch();
+            if (ch == 'q' || ch == 'Q') break;
+
+            
             int rows, cols, i, j, a, b;
             getmaxyx(stdscr, rows, cols);
             for (i = 0; i < cols; i += 2){
+                column[i].tick++;
+                if (column[i].tick < column[i].speed){
+                continue;
+                } else {
+                column[i].tick = 0;
+                }
                 // first look if life is empty or full 
                 //make an algorithm that when the life is != 0 space = 0
                 // when life becomes 0 create space 
@@ -230,6 +254,8 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
         wnoutrefresh(stdscr); 
         doupdate();
         napms(40);
+        curs_set(1);
+        endwin();
     }
 }
 void coin(int currency) {}
