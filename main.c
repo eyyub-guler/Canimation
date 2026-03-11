@@ -14,8 +14,6 @@
 
 #define MAX_COLUMNS 400
 #define MAX_ROW 80
-#define MAX_STREAMS 5
-#define MAX_STREAM_LENGTH 20
 
 #define MATRIX 0
 #define COIN 1
@@ -33,13 +31,16 @@
 #define TL 1
 #define EURO 2
 
-
+int SpecialChar = 0;
+int strlength = 0;
+int Mstr[256] = {0};
 
 struct Column {
     int life;
     int space;
     int tick;
     int speed;
+    int strindex;
 };
 struct Column columns[MAX_COLUMNS];
 volatile sig_atomic_t signal_status = 0;
@@ -61,33 +62,8 @@ int main(const int argc, char *argv[]) {
     if (argc == 1) {
         matrix(color);
     }
-    while ((option = getopt(argc, argv, "A:c:C:")) != EOF) {
+    while ((option = getopt(argc, argv, "C:S:M:")) != EOF) {
         switch (option) {
-            case 'A':
-                if (!strcasecmp(optarg, "matrix")) {
-                    animation = MATRIX;
-                } else if (!strcasecmp(optarg, "coin")) {
-                    animation = COIN;
-                } else if (!strcasecmp(optarg, "snake")) {
-                    animation = SNAKE;
-                } else {
-                    printf("Unknown animation: %s\n", optarg);
-                    return 1;
-                }
-                break;
-            case 'c':
-                if (!strcasecmp(optarg, "dollar")) {
-                    currency = DOLLAR;
-                } else if (!strcasecmp(optarg, "tl")) {
-                    currency = TL;
-                } else if (!strcasecmp(optarg, "euro")) {
-                    currency = EURO;
-                } else {
-                    printf("Unknown currency: %s\n", optarg);
-                    return 1;
-                }
-                break;
-
             case 'C':
                 if (!strcasecmp(optarg, "black")) {
                     color = BLACK;
@@ -107,7 +83,17 @@ int main(const int argc, char *argv[]) {
                     printf("you write a wrong color or a typo");
                     return 0;
                 } break;
-        }
+			case 'S':
+			if (strlen(optarg) == 1) 
+				SpecialChar = optarg[0];
+			break;
+			case 'M' :
+			strlength = strlen(optarg);
+			for (int i = 0; i < strlength; i++) {
+				Mstr[i] = (int)optarg[i];
+			}
+			break;
+		}
     }
     if (animation == MATRIX) {
         matrix(color);
@@ -192,6 +178,7 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
         column[i].life = 0;
         column[i].tick = 0;
         column[i].speed = rand_range(2,5);
+		column[i].strindex = 0;
 }
 
 
@@ -221,14 +208,31 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
                         scrmv(' ',color,0, rows - 1, i);
 
                     } else {
-                        a = rand_range(33, 126);
+						if (SpecialChar) {
+							a = SpecialChar;
+                        } else if (strlength){
+							if (column[i].strindex == strlength)
+								column[i].strindex = 0;
+							a = Mstr[column[i].strindex++];
+						} else {
+							a = rand_range(33, 126);
+                        }
                         scrmv(a,color,0, rows - 1, i);
+                    
                     }
                 } else if(column[i].space > 0){
                     column[i].space--;
                     if(column[i].space == 0){
                         column[i].life = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
-                        a = rand_range(33, 126);
+						if (SpecialChar) {
+							a = SpecialChar;
+                        } else if (strlength){
+							if (column[i].strindex == strlength)
+								column[i].strindex = 0;
+							a = Mstr[column[i].strindex++];
+						} else {
+							a = rand_range(33, 126);
+                        }
                         scrmv(a,WHITE,0, rows - 1, i);
                     } else {
                         scrmv(' ',color,0, rows - 1, i);
@@ -246,7 +250,7 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
     
 
         refresh(); 
-        napms(40);
+        napms(20);
         
     }
     curs_set(1);
