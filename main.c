@@ -43,6 +43,14 @@ struct Column {
     int strindex;
 };
 struct Column columns[MAX_COLUMNS];
+static struct option long_options[] = {
+    {"help", no_argument, 0, 'h'},
+     {"animation", required_argument, 0, 'A'},
+    {"color",     required_argument, 0, 'C'},
+    {"special",   required_argument, 0, 'S'},
+    {"message",   required_argument, 0, 'M'},
+    {0, 0, 0, 0}
+};
 volatile sig_atomic_t signal_status = 0;
 void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col);
 int rand_range(int a, int b);
@@ -62,7 +70,7 @@ int main(const int argc, char *argv[]) {
     if (argc == 1) {
         matrix(color);
     }
-    while ((option = getopt(argc, argv, "C:S:M:")) != EOF) {
+    while ((option = getopt_long(argc, argv, "A:C:S:M:h:",long_options, NULL)) != EOF) {
         switch (option) {
             case 'C':
                 if (!strcasecmp(optarg, "black")) {
@@ -83,6 +91,18 @@ int main(const int argc, char *argv[]) {
                     printf("you write a wrong color or a typo");
                     return 0;
                 } break;
+            case 'A': 
+            if (!strcasecmp(optarg, "matrix")) 
+            animation = MATRIX;
+            else if(!strcasecmp(optarg, "snake"))
+            animation = SNAKE; 
+            else if (!strcasecmp(optarg, "coin"))
+            animation = COIN;
+            else{
+			printf("unknown animation use --help");
+			return 0;
+			}
+			break;
 			case 'S':
 			if (strlen(optarg) == 1) 
 				SpecialChar = optarg[0];
@@ -93,6 +113,15 @@ int main(const int argc, char *argv[]) {
 				Mstr[i] = (int)optarg[i];
 			}
 			break;
+			case '?':
+			printf("unknown option \n");
+			case 'h':
+			printf("  -A, --animation  <type>    matrix, coin, snake\n");
+			printf("  -C, --color      <color>   black, white, red, green, blue, yellow, magenta\n");
+			printf("  -S, --special    <char>    special character\n");
+			printf("  -M, --message    <text>    message to display\n");
+			printf("  -h, --help                 show this help\n");
+			return 0;
 		}
     }
     if (animation == MATRIX) {
