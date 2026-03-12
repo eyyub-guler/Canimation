@@ -34,7 +34,8 @@
 int SpecialChar = 0;
 int strlength = 0;
 int Mstr[256] = {0};
-
+int density = 2;
+float speedinput = 1;
 struct Column {
     int life;
     int space;
@@ -49,6 +50,8 @@ static struct option long_options[] = {
     {"color",     required_argument, 0, 'C'},
     {"special",   required_argument, 0, 'S'},
     {"message",   required_argument, 0, 'M'},
+    {"density",   required_argument, 0, 'D'},
+    {"speed",   required_argument, 0, 's'},
     {0, 0, 0, 0}
 };
 volatile sig_atomic_t signal_status = 0;
@@ -70,7 +73,7 @@ int main(const int argc, char *argv[]) {
     if (argc == 1) {
         matrix(color);
     }
-    while ((option = getopt_long(argc, argv, "A:C:S:M:h:",long_options, NULL)) != EOF) {
+    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:" , long_options, NULL)) != EOF) {
         switch (option) {
             case 'C':
                 if (!strcasecmp(optarg, "black")) {
@@ -117,11 +120,22 @@ int main(const int argc, char *argv[]) {
 			printf("unknown option \n");
 			case 'h':
 			printf("  -A, --animation  <type>    matrix, coin, snake\n");
+			printf("  -c, --currency   <type>    dollar, tl, euro\n");
 			printf("  -C, --color      <color>   black, white, red, green, blue, yellow, magenta\n");
 			printf("  -S, --special    <char>    special character\n");
 			printf("  -M, --message    <text>    message to display\n");
 			printf("  -h, --help                 show this help\n");
+			printf("  -D, --density    <number>  \n");
+			printf("  -s, --speed      <number>  \n");
 			return 0;
+			case 'D':
+			density = atoi(optarg);
+			if (density < 1) density = 2;
+			break;
+			case 's':
+			speedinput = atof(optarg);
+			if (speedinput <= 0) speedinput = 1;
+			break;
 		}
     }
     if (animation == MATRIX) {
@@ -202,7 +216,7 @@ void matrix(int color) {
     init_pair(YELLOW, COLOR_YELLOW, -1);
     init_pair(MAGENTA, COLOR_MAGENTA, -1);
     init_pair(BLACK, COLOR_BLACK, -1);
-for(int i = 0; i < MAX_COLUMNS ; i += 2){
+for(int i = 0; i < MAX_COLUMNS ; i += density){
         column[i].space = rand_range(3,MAX_ROW/2 - 1) + rand_range(3,MAX_ROW/2 - 1) + 1;
         column[i].life = 0;
         column[i].tick = 0;
@@ -211,19 +225,18 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
 }
 
 
-    while (1) {
+    while (1){
 
-            if (signal_status == SIGINT || signal_status == SIGQUIT) {
+            if (signal_status == SIGINT || signal_status == SIGQUIT){
             break;
-                }
+            }
 
             int ch = getch();
             if (ch == 'q' || ch == 'Q') break;
 
-            
             int rows, cols, i, j, a, b;
             getmaxyx(stdscr, rows, cols);
-            for (i = 0; i < cols; i += 2){
+            for (i = 0; i < cols; i += density){
                 column[i].tick++;
                 if (column[i].tick < column[i].speed){
                 continue;
@@ -279,7 +292,7 @@ for(int i = 0; i < MAX_COLUMNS ; i += 2){
     
 
         refresh(); 
-        napms(20);
+        napms((int)(20.0/speedinput));
         
     }
     curs_set(1);
