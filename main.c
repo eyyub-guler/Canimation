@@ -36,6 +36,7 @@ int strlength = 0;
 int Mstr[256] = {0};
 int density = 2;
 float speedinput = 1;
+int backgroundChar = ' ';
 struct Column {
     int life;
     int space;
@@ -52,6 +53,7 @@ static struct option long_options[] = {
     {"message",   required_argument, 0, 'M'},
     {"density",   required_argument, 0, 'D'},
     {"speed",   required_argument, 0, 's'},
+    {"background",   required_argument, 0, 'b'},
     {0, 0, 0, 0}
 };
 volatile sig_atomic_t signal_status = 0;
@@ -73,7 +75,7 @@ int main(const int argc, char *argv[]) {
     if (argc == 1) {
         matrix(color);
     }
-    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:" , long_options, NULL)) != EOF) {
+    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:b:" , long_options, NULL)) != EOF) {
         switch (option) {
             case 'C':
                 if (!strcasecmp(optarg, "black")) {
@@ -127,6 +129,7 @@ int main(const int argc, char *argv[]) {
 			printf("  -h, --help                 show this help\n");
 			printf("  -D, --density    <number>  \n");
 			printf("  -s, --speed      <number>  \n");
+			printf("  -b, --background <number>  special background char\n");
 			return 0;
 			case 'D':
 			density = atoi(optarg);
@@ -135,6 +138,9 @@ int main(const int argc, char *argv[]) {
 			case 's':
 			speedinput = atof(optarg);
 			if (speedinput <= 0) speedinput = 1;
+			break;
+			case 'b':
+			backgroundChar = (int)(optarg[0]);
 			break;
 		}
     }
@@ -189,7 +195,7 @@ void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col)
         v = mvinch(i, col);
         c = v & A_CHARTEXT;
         pair = PAIR_NUMBER(v);
-        if(a == ' ' && c == ' '){
+        if(a == backgroundChar && c == backgroundChar){
                 currpair = pair;
                 continue;
         }
@@ -199,8 +205,8 @@ void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col)
     }
 }
 void matrix(int color) {
-    int a;
     struct Column column[MAX_COLUMNS];
+    int rows, cols, i, j, a, b;
     initscr();
     start_color();
     curs_set(0);
@@ -208,7 +214,17 @@ void matrix(int color) {
     signal(SIGINT, sighandler);
     signal(SIGQUIT, sighandler);
     
-    use_default_colors(); // arka plan için şart
+    if(backgroundChar != ' '){
+	getmaxyx(stdscr, rows, cols);
+	for (int y = 0; y < rows; y++) {
+    for (int x = 0; x < cols; x++) {
+        mvaddch(y, x, backgroundChar | COLOR_PAIR(BLACK));
+		}
+	}
+
+	}
+    
+    use_default_colors();
     init_pair(GREEN, COLOR_GREEN, -1);
     init_pair(WHITE, COLOR_WHITE, -1);
     init_pair(BLUE, COLOR_BLUE, -1);
@@ -234,7 +250,6 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
             int ch = getch();
             if (ch == 'q' || ch == 'Q') break;
 
-            int rows, cols, i, j, a, b;
             getmaxyx(stdscr, rows, cols);
             for (i = 0; i < cols; i += density){
                 column[i].tick++;
@@ -247,7 +262,7 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
                     column[i].life--;
                     if(column[i].life == 0){
                         column[i].space = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
-                        scrmv(' ',color,0, rows - 1, i);
+                        scrmv(backgroundChar,BLACK,0, rows - 1, i);
 
                     } else {
 						if (SpecialChar) {
@@ -257,7 +272,9 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
 								column[i].strindex = 0;
 							a = Mstr[column[i].strindex++];
 						} else {
+							do{
 							a = rand_range(33, 126);
+							} while (a == backgroundChar);
                         }
                         scrmv(a,color,0, rows - 1, i);
                     
@@ -273,16 +290,18 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
 								column[i].strindex = 0;
 							a = Mstr[column[i].strindex++];
 						} else {
+							do{
 							a = rand_range(33, 126);
+							} while (a == backgroundChar);
                         }
                         scrmv(a,WHITE,0, rows - 1, i);
                     } else {
-                        scrmv(' ',color,0, rows - 1, i);
+                        scrmv(backgroundChar,BLACK,0, rows - 1, i);
                     }
                 } else {
                     column[i].space = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
                     column[i].life = 0;
-                    scrmv(' ',color,0, rows - 1, i);
+                    scrmv(backgroundChar,color,0, rows - 1, i);
                     column[i].space--;
                 }
              
