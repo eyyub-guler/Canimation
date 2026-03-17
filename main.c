@@ -37,7 +37,6 @@ int Mstr[256] = {0};
 int density = 2;
 float speedinput = 1;
 int backgroundChar = ' ';
-int oldmatrix = 0;
 struct Column {
     int life;
     int space;
@@ -55,7 +54,6 @@ static struct option long_options[] = {
     {"density",   required_argument, 0, 'D'},
     {"speed",   required_argument, 0, 's'},
     {"background",   required_argument, 0, 'b'},
-    {"old",   no_argument, 0, 'o'},
     {0, 0, 0, 0}
 };
 volatile sig_atomic_t signal_status = 0;
@@ -79,7 +77,7 @@ int main(const int argc, char *argv[]) {
     if (argc == 1) {
         matrix(color);
     }
-    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:b:o:" , long_options, NULL)) != EOF) {
+    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:b:" , long_options, NULL)) != EOF) {
         switch (option) {
             case 'C':
                 if (!strcasecmp(optarg, "black")) {
@@ -146,9 +144,6 @@ int main(const int argc, char *argv[]) {
 			break;
 			case 'b':
 			backgroundChar = (int)(optarg[0]);
-			break;
-			case 'o':
-			oldmatrix = 1;
 			break;
 			
 		}
@@ -257,7 +252,6 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
 		column[i].strindex = 0;
 }
 
-if(!oldmatrix){
     while (1){
 
             if (signal_status == SIGINT || signal_status == SIGQUIT){
@@ -331,143 +325,7 @@ if(!oldmatrix){
         napms((int)(20.0/speedinput));
         
     }
-} else {
-	int nextblock = 0;
-	 while (1){
 
-            if (signal_status == SIGINT || signal_status == SIGQUIT){
-            break;
-            }
-
-            int ch = getch();
-            if (ch == 'q' || ch == 'Q') break;
-
-            getmaxyx(stdscr, rows, cols);
-			            for (i = 0; i < cols; i += density){
-							j = 0;
-                column[i].tick++;
-                if (column[i].tick < column[i].speed){
-                continue;
-                } else {
-                column[i].tick = 0;
-                }
-                if(column[i].life > 0){
-                    column[i].life--;
-                    if(column[i].life == 0){
-                        column[i].space = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
-						// do nothing
-                    } else {
-						// print a character on the j = 0 point and make j = 1;
-						
-						if (SpecialChar) {
-							a = SpecialChar;
-                        } else if (strlength){
-							if (column[i].strindex == strlength)
-								column[i].strindex = 0;
-							a = Mstr[column[i].strindex++];
-						} else {
-							do{
-							a = rand_range(33, 126);
-							} while (a == backgroundChar);
-                        }
-                        mvaddch(0, i, backgroundChar | COLOR_PAIR(BLACK));
-                        j++;
-                        // scrmv(a,color,0, rows - 1, i);
-                    
-                    }
-                } else if(column[i].space > 0){
-                    column[i].space--;
-                    if(column[i].space == 0){
-						
-						// print a character on the j = 0 point and make j = 1;
-                        column[i].life = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
-						if (SpecialChar) {
-							a = SpecialChar;
-                        } else if (strlength){
-							if (column[i].strindex == strlength)
-								column[i].strindex = 0;
-							a = Mstr[column[i].strindex++];
-						} else {
-							do{
-							a = rand_range(33, 126);
-							} while (a == backgroundChar);
-                        }
-                        mvaddch(0, i, backgroundChar | COLOR_PAIR(BLACK));
-                        j++;
-                        // scrmv(a,WHITE,0, rows - 1, i);
-                    } else {
-						// do nothing
-                    }
-                } else {
-                    column[i].space = rand_range(3,rows/2 - 1) + rand_range(3,rows/2 - 1) + 1;
-                    column[i].life = 0;
-                    // do nothing 
-                    column[i].space--;
-                }
-             
-				 currc = mvinch(j, i) & A_CHARTEXT;  
-             for(; j < rows; j++){
-				nextc = (j == rows - 1) ? backgroundChar : mvinch(j+1, i) & A_CHARTEXT;
-				if(currc == backgroundChar){
-					if (nextc == backgroundChar){
-						// skip
-					} else {
-					nextblock = backgroundChar;
-					currc = nextc;
-					continue;
-					}
-				} else {
-					if(nextc == backgroundChar){
-						//create a rand nextblock and make current block usual color
-						chtype h = mvinch(j,i);
-						h = (h & A_CHARTEXT);
-						mvaddch(j,i,h | COLOR_PAIR(color));
-						if (SpecialChar) {
-							nextblock = SpecialChar;
-                        } else if (strlength){
-							if (column[i].strindex == strlength)
-								column[i].strindex = 0;
-							nextblock = Mstr[column[i].strindex++];
-						} else {
-							do{
-							nextblock = rand_range(33, 126);
-							} while (nextblock == backgroundChar);
-                        }
-                        currc = nextc;
-                        continue;
-					} else {
-						// skip
-					}
-				}
-			 // if this value is ' ' look at next value 
-			 // if next value is also ' ' skip
-			 // else make nextblock ' '
-			 // if this block is not ' '
-			 // and next block is also not ' ' skip
-			 // if next block is not ' ' make nextblock and create rand value for it
-			 // print continue on every end of if's 
-			 
-			 if(nextblock != 0){
-				 if(nextblock == backgroundChar) {
-					 mvaddch(j,i,backgroundChar | COLOR_PAIR(BLACK));
-				} else {
-					mvaddch(j,i,nextblock | COLOR_PAIR(WHITE));
-					} 
-					nextblock = 0;
-				 }
-			 // check what is nextblock if its not 0
-			 // if its ' ' make this block ' '
-			 //  take char nextblock for this block and make its color whıte
-			 // print the next block into current block 
-			 // and then make nextblock 0
-			 currc = nextc;
-			 }
-			 
-            }
-            
-        refresh(); 
-        napms((int)(20.0/speedinput));
-	}
 }
     curs_set(1);
         endwin();
