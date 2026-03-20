@@ -17,7 +17,8 @@
 
 #define MATRIX 0
 #define COIN 1
-#define SNAKE 2
+#define SNOW 2
+#define SNAKE 3
 
 #define WHITE 0
 #define BLUE 1
@@ -36,15 +37,20 @@ int strlength = 0;
 int Mstr[256] = {0};
 int density = 2;
 float speedinput = 1;
+bool rainbow = 0;
 int backgroundChar = ' ';
-struct Column {
+struct MatrixColumn {
     int life;
     int space;
     int tick;
     int speed;
     int strindex;
 };
-struct Column columns[MAX_COLUMNS];
+struct SnowFlake {
+	int allowed;
+	int speed;
+	int tick;
+	}
 static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
      {"animation", required_argument, 0, 'A'},
@@ -65,6 +71,8 @@ void coin(int currency);
 void snake();
 void startscr();
 void startcolor();
+void snowfall();
+int snowflakeChar(int fallingSpeed);
 int main(const int argc, char *argv[]) {
 
     int animation = MATRIX;
@@ -77,7 +85,7 @@ int main(const int argc, char *argv[]) {
     if (argc == 1) {
         matrix(color);
     }
-    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:b:" , long_options, NULL)) != EOF) {
+    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:b:s:" , long_options, NULL)) != EOF) {
         switch (option) {
             case 'C':
                 if (!strcasecmp(optarg, "black")) {
@@ -94,15 +102,17 @@ int main(const int argc, char *argv[]) {
                     color = YELLOW;
                 } else if (!strcasecmp(optarg, "magenta")) {
                     color = MAGENTA;
-                } else {
+                } else if (!strcasecmp(optarg, "rainbow")){
+					rainbow = 1;
+				} else {
                     printf("you write a wrong color or a typo");
                     return 0;
                 } break;
             case 'A': 
             if (!strcasecmp(optarg, "matrix")) 
             animation = MATRIX;
-            else if(!strcasecmp(optarg, "snake"))
-            animation = SNAKE; 
+            else if(!strcasecmp(optarg, "snow"))
+            animation = SNOW; 
             else if (!strcasecmp(optarg, "coin"))
             animation = COIN;
             else{
@@ -123,16 +133,14 @@ int main(const int argc, char *argv[]) {
 			case '?':
 			printf("unknown option \n");
 			case 'h':
-			printf("  -A, --animation  <type>    matrix, coin, snake\n");
-			printf("  -c, --currency   <type>    dollar, tl, euro\n");
-			printf("  -C, --color      <color>   black, white, red, green, blue, yellow, magenta\n");
+			printf("  -A, --animation  <type>    matrix, 'more will come'\n");
+			printf("  -C, --color      <color>   black, white, red, green, blue, yellow, magenta,rainbow\n");
 			printf("  -S, --special    <char>    special character\n");
 			printf("  -M, --message    <text>    message to display\n");
 			printf("  -h, --help                 show this help\n");
 			printf("  -D, --density    <number>  \n");
 			printf("  -s, --speed      <number>  \n");
-			printf("  -b, --background <number>  special background char\n");
-			printf("  -o, --old           old matrix function\n");
+			printf("  -b, --background <char>  special background char\n");
 			return 0;
 			case 'D':
 			density = atoi(optarg);
@@ -159,6 +167,7 @@ int main(const int argc, char *argv[]) {
     if (animation == SNAKE) {
         snake();
     }
+    if (animation == SNOW) snowfall();
     return 0;
 }
 void sighandler(int s) {
@@ -210,6 +219,13 @@ void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col)
         currpair = pair;
     }
 }
+int snowflakeChar(int fallingSpeed){
+	int a = rand_range(fallingSpeed - 5, fallingSpeed + 10);
+	if (a <= 4) snowchar = '.';
+	else if (a <= 7) snowchar = ',';
+	else if (a <= 10) snowchar = '+';
+	else snowchar = '*';
+	}
 void startscr(){
 	initscr();
     start_color();
@@ -228,7 +244,7 @@ void startcolor(){
     init_pair(BLACK, COLOR_BLACK, -1);
 	}
 void matrix(int color) {
-    struct Column column[MAX_COLUMNS];
+	struct MatrixColumn column[MAX_COLUMNS];
     int rows, cols, i, j, a, b,currc,nextc;
     
     signal(SIGINT, sighandler);
@@ -269,6 +285,7 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
                 } else {
                 column[i].tick = 0;
                 }
+                if(rainbow) color = rand_range(BLUE,MAGENTA);
                 if(column[i].life > 0){
                     column[i].life--;
                     if(column[i].life == 0){
@@ -326,9 +343,69 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
         
     }
 
-}
+
     curs_set(1);
         endwin();
+}
+void snowfall(){
+	struct SnowFlake column[MAX_COLUMNS];
+	struct SnowFlake row[MAX_ROWS];
+	int rows ,cols,i,j;
+	int snowDensity = 0, nextSnowdensity;
+	int windSpeed = 0,NextwindSpeed;
+	int snowchar;
+	bool willBreak = 0;
+	int fallingSpeed = 5,NextFallingSpeed; // the smallest will be 5 and the highest will be 10 
+	int weatherTimer;
+	wind_timer = rand_range(10000, 30000) + rand_range(10000, 30000); // its between 20 sec and 60 sec 
+	NextwindSpeed = rand_range(-10,10);
+	NextFallingSpeed = rand_range (5,10);
+	nextSnowdensity = rand_range(0,50);
+	
+	while(1){
+		signal(SIGINT, sighandler);
+		signal(SIGQUIT, sighandler);
+		wind_timer -= sleep_ms;
+		getmaxyx(stdscr, rows, cols);
+		
+		if(wind_timer <= 0) {
+			if(windSpeed != NextwindSpeed){
+				if (NextwindSpeed > windSpeed) windSpeed++;
+				else windSpeed--;
+				willBreak = 1;
+			}		
+			if(fallingSpeed != NextFallingSpeed){
+				if (NextFallingSpeed > fallingSpeed) fallingSpeed++;
+				else fallingSpeed--;
+				willBreak = 1;
+			}
+			if(snowDensity != nextSnowdensity){
+				if (nextSnowdensity > snowDensity) snowDensity++;
+				else snowDensity--;
+				willBreak = 1;
+			}
+			if (willBreak) {
+				willBreak = 0;
+				break;
+			}
+			wind_timer = rand_range(10000, 30000) + rand_range(10000, 30000); // its between 20 sec and 60 sec 
+			NextwindSpeed = rand_range(-10,10);
+			NextFallingSpeed = rand_range (5,10);
+			nextSnowdensity = rand_range(0,50);
+		}	
+		
+		for(i = 0;i < cols ; i++){
+		// if column[i].allowed column[i-1].allowed column[i+1].allowed is 1 then you can create random vaue to make it spawn right here
+		// pick randm value connected to density
+		//if the char is printed make the next one isnt allowed and this one also not allowed
+		// for every two animation change make the every not allowed dissapear
+		
+		// scrmv one down for each one
+		}
+		for(j = 0; j < rows ; j++){
+		// look at the wind value and make the screen move with it and add new chars if its allowed	
+		}
+	}
 }
 void coin(int currency) {}
 void snake(void) {}   
