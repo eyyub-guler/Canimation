@@ -47,10 +47,10 @@ struct MatrixColumn {
     int strindex;
 };
 struct SnowFlake {
-	int allowed;
+	int allowed; // the zero means it can out a new character i couldnt think a better version for life and allowing on the same int
 	int speed;
 	int tick;
-	}
+	};
 static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
      {"animation", required_argument, 0, 'A'},
@@ -64,6 +64,7 @@ static struct option long_options[] = {
 };
 volatile sig_atomic_t signal_status = 0;
 void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col);
+void scrmv_horizontal(int nextPrint,int nexprintscolor, int firstcol, int lastcol, int row);
 int rand_range(int a, int b);
 void swap_int(int *a, int *b);
 void matrix(int color);
@@ -133,7 +134,7 @@ int main(const int argc, char *argv[]) {
 			case '?':
 			printf("unknown option \n");
 			case 'h':
-			printf("  -A, --animation  <type>    matrix, 'more will come'\n");
+			printf("  -A, --animation  <type>    matrix, snow, 'more will come'\n");
 			printf("  -C, --color      <color>   black, white, red, green, blue, yellow, magenta,rainbow\n");
 			printf("  -S, --special    <char>    special character\n");
 			printf("  -M, --message    <text>    message to display\n");
@@ -219,12 +220,57 @@ void scrmv(int nextPrint,int nexprintscolor, int firstrow, int lastrow, int col)
         currpair = pair;
     }
 }
+void scrmv_horizontal(int nextPrint,int nexprintscolor, int firstcol, int lastcol, int row){
+	int rows,cols;
+    getmaxyx(stdscr, rows, cols);
+    if(lastcol >= cols || row >= rows || firstcol < 0) return;
+    if(firstcol < lastcol){
+	chtype v = mvinch(row,firstcol);
+    char c = v & A_CHARTEXT;
+    short pair = PAIR_NUMBER(v);
+    int a = c;
+    short currpair = pair;
+    mvaddch(row, firstcol, nextPrint| COLOR_PAIR(nexprintscolor));
+    for(int i = firstcol + 1; i <= lastcol; i++){
+        v = mvinch(row, i);
+        c = v & A_CHARTEXT;
+        pair = PAIR_NUMBER(v);
+        if(a == backgroundChar && c == backgroundChar){
+                currpair = pair;
+                continue;
+        }
+        mvaddch(row, i, a| COLOR_PAIR(currpair));
+        a = c;
+        currpair = pair;
+    }
+
+	} else {
+    chtype v = mvinch(row, lastcol);
+    char c = v & A_CHARTEXT;
+    short pair = PAIR_NUMBER(v);
+    int a = c;
+    short currpair = pair;
+    mvaddch(row, lastcol, nextPrint | COLOR_PAIR(nexprintscolor));
+    for (int i = lastcol - 1; i >= firstcol; i--) {
+        v = mvinch(row, i);
+        c = v & A_CHARTEXT;
+        pair = PAIR_NUMBER(v);
+        if (a == backgroundChar && c == backgroundChar) {
+            currpair = pair;
+            continue;
+        }
+        mvaddch(row, i, a | COLOR_PAIR(currpair));
+        a = c;
+        currpair = pair;
+    }
+}
+}
 int snowflakeChar(int fallingSpeed){
 	int a = rand_range(fallingSpeed - 5, fallingSpeed + 10);
-	if (a <= 4) snowchar = '.';
-	else if (a <= 7) snowchar = ',';
-	else if (a <= 10) snowchar = '+';
-	else snowchar = '*';
+	if (a <= 4) return '.';
+	else if (a <= 7) return ',';
+	else if (a <= 10) return '+';
+	else return '*';
 	}
 void startscr(){
 	initscr();
@@ -245,7 +291,7 @@ void startcolor(){
 	}
 void matrix(int color) {
 	struct MatrixColumn column[MAX_COLUMNS];
-    int rows, cols, i, j, a, b,currc,nextc;
+    int rows, cols, i, j, a, b,currc,nextc,ch;
     
     signal(SIGINT, sighandler);
     signal(SIGQUIT, sighandler);
@@ -274,7 +320,7 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
             break;
             }
 
-            int ch = getch();
+            ch = getch();
             if (ch == 'q' || ch == 'Q') break;
 
             getmaxyx(stdscr, rows, cols);
@@ -349,62 +395,112 @@ for(int i = 0; i < MAX_COLUMNS ; i += density){
 }
 void snowfall(){
 	struct SnowFlake column[MAX_COLUMNS];
-	struct SnowFlake row[MAX_ROWS];
-	int rows ,cols,i,j;
-	int snowDensity = 0, nextSnowdensity;
-	int windSpeed = 0,NextwindSpeed;
+	struct SnowFlake row[MAX_ROW];
+	int rows ,cols,i,j,count = 0;
+	int ch;
+	float snowDensity = 0, nextSnowdensity;
+	float windSpeed = 0,NextwindSpeed;
 	int snowchar;
+	
+	for (i = 0; i < MAX_COLUMNS;i++){
+	column[i].allowed =0;
+	}
+	for(i = 0; i < MAX_ROW;i++){
+	row[i].allowed = 0;
+	}
 	bool willBreak = 0;
-	int fallingSpeed = 5,NextFallingSpeed; // the smallest will be 5 and the highest will be 10 
+	float fallingSpeed = 5,NextFallingSpeed; // the smallest will be 5 and the highest will be 10 
 	int weatherTimer;
-	wind_timer = rand_range(10000, 30000) + rand_range(10000, 30000); // its between 20 sec and 60 sec 
-	NextwindSpeed = rand_range(-10,10);
+	weatherTimer= rand_range(10000, 30000) + rand_range(10000, 30000); // its between 20 sec and 60 sec 
+	NextwindSpeed = rand_range(-3,3);
 	NextFallingSpeed = rand_range (5,10);
-	nextSnowdensity = rand_range(0,50);
+	nextSnowdensity = rand_range(0,5);
 	
 	while(1){
+		if(count = 1){
+		for(i = 0;i < cols; i++){
+		 column[i].allowed = 1;
+		 count = 0;
+		}
+		}
 		signal(SIGINT, sighandler);
 		signal(SIGQUIT, sighandler);
-		wind_timer -= sleep_ms;
+		weatherTimer -= (int)(200/fallingSpeed);
 		getmaxyx(stdscr, rows, cols);
-		
-		if(wind_timer <= 0) {
+
+		if (signal_status == SIGINT || signal_status == SIGQUIT){
+            break;
+            }
+
+        ch = getch();
+            if (ch == 'q' || ch == 'Q') break;
+
+		if(weatherTimer <= 0) {
 			if(windSpeed != NextwindSpeed){
-				if (NextwindSpeed > windSpeed) windSpeed++;
-				else windSpeed--;
+				if (NextwindSpeed > windSpeed) windSpeed+= 0.1;
+				else windSpeed -= 0.1;
 				willBreak = 1;
 			}		
 			if(fallingSpeed != NextFallingSpeed){
-				if (NextFallingSpeed > fallingSpeed) fallingSpeed++;
-				else fallingSpeed--;
+				if (NextFallingSpeed > fallingSpeed) fallingSpeed+= 0.1;
+				else fallingSpeed-= 0.1;
 				willBreak = 1;
 			}
 			if(snowDensity != nextSnowdensity){
-				if (nextSnowdensity > snowDensity) snowDensity++;
-				else snowDensity--;
+				if (nextSnowdensity > snowDensity) snowDensity+= 0.1;
+				else snowDensity-= 0.1;
 				willBreak = 1;
-			}
+			} 
 			if (willBreak) {
 				willBreak = 0;
-				break;
-			}
-			wind_timer = rand_range(10000, 30000) + rand_range(10000, 30000); // its between 20 sec and 60 sec 
-			NextwindSpeed = rand_range(-10,10);
+			} else {
+			weatherTimer = rand_range(10000, 30000) + rand_range(10000, 30000); // its between 20 sec and 60 sec 
+			NextwindSpeed = rand_range(-3,3);
 			NextFallingSpeed = rand_range (5,10);
-			nextSnowdensity = rand_range(0,50);
+			nextSnowdensity = rand_range(0,5);
 		}	
-		
-		for(i = 0;i < cols ; i++){
-		// if column[i].allowed column[i-1].allowed column[i+1].allowed is 1 then you can create random vaue to make it spawn right here
-		// pick randm value connected to density
-		//if the char is printed make the next one isnt allowed and this one also not allowed
-		// for every two animation change make the every not allowed dissapear
-		
-		// scrmv one down for each one
+	}
+		for(int k = 0;k < cols ; k++){
+			if(column[k].allowed) column[k].allowed--;
+			if(row[k].allowed) row[k].allowed--;
 		}
-		for(j = 0; j < rows ; j++){
+		for(i = 1;i < cols-1 ; i++){	
+			if(!column[i - 1].allowed && !column[i].allowed && !column[i+1].allowed){
+				if ((rand() % 100) < snowDensity + 3){
+				scrmv(snowflakeChar((int)(fallingSpeed)),WHITE,0,rows - 1,i);
+				column[i - 1].allowed = 2;
+				column[i].allowed = 2;
+				column[i + 1].allowed = 2;
+				continue;
+				}
+			}
+			scrmv(' ',BLACK,0,rows - 1, i); 
+		}
+	if(windSpeed){
+		for(j = 0; j <= windSpeed;j++){
+		for(i = 1; i < rows - 1; i++){
+			if(!row[i - 1].allowed && !row[i].allowed && !row[i+1].allowed){
+				if(rand_range(0, 100) < (snowDensity * abs(windSpeed) + 5)){
+				if(windSpeed > 0)
+				scrmv_horizontal(snowflakeChar((int)(fallingSpeed)),WHITE,0,cols - 1,i);
+				else 
+				scrmv_horizontal(snowflakeChar((int)(fallingSpeed)),WHITE,cols - 1,0,i);
+				row[i - 1].allowed = 2;
+				row[i].allowed = 2;
+				row[i + 1].allowed = 2;
+				continue;
+				}
+			}
+			scrmv_horizontal(' ',BLACK,0,cols - 1, i); 
+		// make it move one block per the wind value and usleep 10 ms
 		// look at the wind value and make the screen move with it and add new chars if its allowed	
 		}
+		refresh();
+		napms(1);
+		}
+	}
+		refresh();
+		napms((int)(200/fallingSpeed));
 	}
 }
 void coin(int currency) {}
