@@ -19,19 +19,21 @@
 #define COIN 1
 #define SNOW 2
 #define SNAKE 3
+#define HORIZON 4
 
-#define WHITE 0
-#define BLUE 1
-#define RED 2
-#define GREEN 3
-#define YELLOW 4
+#define BLACK   16
+#define RED     1
+#define GREEN   2
+#define YELLOW  3
+#define BLUE    4
 #define MAGENTA 5
-#define BLACK 6
+#define WHITE   15
 
 #define DOLLAR 0
 #define TL 1
 #define EURO 2
 
+int horizonposition = 1;
 int SpecialChar = 0;
 int strlength = 0;
 int Mstr[256] = {0};
@@ -51,7 +53,12 @@ struct SnowFlake {
 	int speed;
 	int tick;
 	};
-static struct option long_options[] = {
+struct Horizon{
+	int life;
+	int charindex;
+	int rowcolor;
+	};
+	static struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
      {"animation", required_argument, 0, 'A'},
     {"color",     required_argument, 0, 'C'},
@@ -74,6 +81,7 @@ void startscr();
 void startcolor();
 void snowfall();
 int snowflakeChar(int fallingSpeed);
+void horizon();
 int main(const int argc, char *argv[]) {
 
     int animation = MATRIX;
@@ -86,7 +94,7 @@ int main(const int argc, char *argv[]) {
     if (argc == 1) {
         matrix(color);
     }
-    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:b:s:" , long_options, NULL)) != EOF) {
+    while ((option = getopt_long(argc, argv, "A:C:S:M:h:D:s:b:s:p" , long_options, NULL)) != EOF) {
         switch (option) {
             case 'C':
                 if (!strcasecmp(optarg, "black")) {
@@ -116,6 +124,8 @@ int main(const int argc, char *argv[]) {
             animation = SNOW; 
             else if (!strcasecmp(optarg, "coin"))
             animation = COIN;
+            else if (!strcasecmp(optarg, "horizon"))
+            animation = HORIZON;
             else{
 			printf("unknown animation use --help");
 			return 0;
@@ -134,7 +144,7 @@ int main(const int argc, char *argv[]) {
 			case '?':
 			printf("unknown option \n");
 			case 'h':
-			printf("  -A, --animation  <type>    matrix, snow, 'more will come'\n");
+			printf("  -A, --animation  <type>    matrix, snow, horizon 'more will come'\n");
 			printf("  -C, --color      <color>   black, white, red, green, blue, yellow, magenta,rainbow\n");
 			printf("  -S, --special    <char>    special character\n");
 			printf("  -M, --message    <text>    message to display\n");
@@ -142,6 +152,7 @@ int main(const int argc, char *argv[]) {
 			printf("  -D, --density    <number>  \n");
 			printf("  -s, --speed      <number>  \n");
 			printf("  -b, --background <char>  special background char\n");
+			printf("  -p, --background <char>  special background char\n");
 			return 0;
 			case 'D':
 			density = atoi(optarg);
@@ -154,21 +165,30 @@ int main(const int argc, char *argv[]) {
 			case 'b':
 			backgroundChar = (int)(optarg[0]);
 			break;
-			
+			case 'p':
+			if (!strcasecmp(optarg, "up"));
+				horizonposition = 0;
+			else if (!strcasecmp(optarg, "down"))
+				horizonposition = 2;
+			break;
 		}
     }
+    if(horizonpoint == NULL)
     startscr();
     startcolor();
-    if (animation == MATRIX) {
+    if (animation == MATRIX) 
         matrix(color);
-    }
-    if (animation == COIN) {
+    
+    if (animation == COIN) 
         coin(currency);
-    }
-    if (animation == SNAKE) {
+    
+    if (animation == SNAKE)
         snake();
-    }
-    if (animation == SNOW) snowfall();
+    
+    if (animation == SNOW)
+     snowfall();
+     if (animation == HORIZON)
+     horizon();
     return 0;
 }
 void sighandler(int s) {
@@ -281,13 +301,9 @@ void startscr(){
 void startcolor(){
 	
     use_default_colors();
-    init_pair(GREEN, COLOR_GREEN, -1);
-    init_pair(WHITE, COLOR_WHITE, -1);
-    init_pair(BLUE, COLOR_BLUE, -1);
-    init_pair(RED, COLOR_RED, -1);
-    init_pair(YELLOW, COLOR_YELLOW, -1);
-    init_pair(MAGENTA, COLOR_MAGENTA, -1);
-    init_pair(BLACK, COLOR_BLACK, -1);
+    for(int i = 1; i < 256; i++){
+    init_pair(i, i, -1);
+}
 	}
 void matrix(int color) {
 	struct MatrixColumn column[MAX_COLUMNS];
@@ -428,9 +444,9 @@ void snowfall(){
 		weatherTimer -= (int)(200/fallingSpeed);
 		getmaxyx(stdscr, rows, cols);
 
-		if (signal_status == SIGINT || signal_status == SIGQUIT){
+		if (signal_status == SIGINT || signal_status == SIGQUIT)
             break;
-            }
+            
 
         ch = getch();
             if (ch == 'q' || ch == 'Q') break;
@@ -501,6 +517,173 @@ void snowfall(){
 	}
 		refresh();
 		napms((int)(200/fallingSpeed));
+	}
+}
+void horizon(){
+	int rows ,cols,i,j,count = 0;
+	struct Horizon rows[MAX_COLUMNS];
+	int ch;
+	int strlength,horizonpoint;
+	int horizonstr[] = *str;
+	getmaxyx(stdscr, rows, cols);	
+	switch(horizonposition){
+		case 0:
+		horizonpoint = 0;
+		break;
+		case 1:
+		horizonpoint = rows/2;
+		break;
+		case 2:
+		horizonpoint = rows - 1;
+		break;
+		}
+	for (i = horizonpoint - 1;i > 0;i--){
+		rows[i].life = horizonpoint - i;
+	}
+	for (i = horizonpoint + 1;i < rows;i++){
+		rows[i].life = i - horizonpoint;
+	}
+	for (i = 0; i < horizonpoint - 1  ; i++){
+			for(j = cols - 1 ; j >= cols/2;j--){
+				scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,0,cols - 1, i);
+				if (!rows[i].life) {
+				rows[i].life = horizonpoint - i;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+			}
+			}
+	}
+	for (i = horizonpoint + 1; i < rows ; i++){
+			for(j = cols - 1 ; j >= cols/2;j--){
+				scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,cols - 1,0, i);
+				if (!rows[i].life) {
+				rows[i].life =i -  horizonpoint;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+			}
+			}
+	}
+	for (i = horizonpoint - 1;i > 0;i--){
+		for(j = 0; j < horizonpoint - i ; j++){
+			scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,0,cols - 1, i);
+			rows[i].life--;
+			if (!rows[i].life) {
+				rows[i].life = horizonpoint - i;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+			}
+		}
+	}
+	for (i = horizonpoint + 1;i < rows;i++){
+		for(j = 0; j < i - horizonpoint; j++){
+			scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,cols - 1,0, i);
+			rows[i].life--;
+			if (!rows[i].life) {
+				rows[i].life = i - horizonpoint ;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+			}
+		}
+	}
+	while(1){
+		ch = getch();
+		if (ch == KEY_RESIZE){
+			endwin();
+			refresh();
+			clear();
+			getmaxyx(stdscr, rows, cols);
+		// i will restart the screen by using the funtion on the top
+		switch(horizonposition){
+		case 0:
+		horizonpoint = 0;
+		break;
+		case 1:
+		horizonpoint = rows/2;
+		break;
+		case 2:
+		horizonpoint = rows - 1;
+		break;
+		}
+		for (i = horizonpoint - 1;i > 0;i--){
+		rows[i].life = horizonpoint - i;
+		}
+		for (i = horizonpoint + 1;i < rows;i++){
+			rows[i].life = i - horizonpoint;
+		}
+		for (i = 0; i < horizonpoint - 1  ; i++){
+				for(j = cols - 1 ; j >= cols/2;j--){
+					scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,0,cols - 1, i);
+				if (!rows[i].life) {
+					rows[i].life = horizonpoint - i;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+				}
+				}
+		}
+		for (i = horizonpoint + 1; i < rows ; i++){
+			for(j = cols - 1 ; j >= cols/2;j--){
+				scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,cols - 1,0, i);
+				if (!rows[i].life) {
+				rows[i].life =i -  horizonpoint;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+				}
+				}	
+		}
+		for (i = horizonpoint - 1;i > 0;i--){
+			for(j = 0; j < horizonpoint - i ; j++){
+				scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,0,cols - 1, i);
+				rows[i].life--;
+				if (!rows[i].life) {
+					rows[i].life = horizonpoint - i;
+					if (rows[i].charindex == strlength) rows[i].charindex = 0;
+					else rows[i].charindex++;
+				}
+			}
+	}
+	for (i = horizonpoint + 1;i < rows;i++){
+		for(j = 0; j < i - horizonpoint; j++){
+			scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,cols - 1,0, i);
+			rows[i].life--;
+			if (!rows[i].life) {
+				rows[i].life = i - horizonpoint ;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+			}
+		}
+	}
+		
+			}
+		if (signal_status == SIGINT || signal_status == SIGQUIT) break;
+		if (ch == 'q' || ch == 'Q') break;
+		
+		
+		
+		
+		for (i = horizonpoint - 1;i > 0;i--){
+		for(j = 0; j < horizonpoint - i ; j++){
+			scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,0,cols - 1, i);
+			rows[i].life--;
+			if (!rows[i].life) {
+				rows[i].life = horizonpoint - i;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+			}
+		}
+	}
+	for (i = horizonpoint + 1;i < rows;i++){
+		for(j = 0; j < i - horizonpoint; j++){
+			scrmv_horizontal(horizonstr[rows[i].charindex],rows[i].rowcolor,cols - 1,0, i);
+			rows[i].life--;
+			if (!rows[i].life) {
+				rows[i].life = i - horizonpoint ;
+				if (rows[i].charindex == strlength) rows[i].charindex = 0;
+				else rows[i].charindex++;
+			}
+		}
+	}
+	
+	}	
 	}
 }
 void coin(int currency) {}
